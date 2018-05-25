@@ -1,0 +1,50 @@
+language: go
+
+go:
+  - "1.10"
+
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - libasound2-dev
+      - libgles2-mesa-dev
+      - libalut-dev
+      - libxcursor-dev
+      - libxi-dev
+      - libxinerama-dev
+      - libxrandr-dev
+      - libxxf86vm-dev
+  chrome: stable
+
+install:
+  - go get -t -v github.com/hajimehoshi/ebiten/...
+  - go get github.com/hajimehoshi/gopherwasm/js
+  - go get github.com/gopherjs/gopherjs
+  - go get github.com/gopherjs/webgl
+  - go get -tags example github.com/hajimehoshi/ebiten/examples/...
+  - go get myitcv.io/gjbt
+  - mkdir /tmp/google-chrome-bin
+  - ln -s /usr/bin/google-chrome-stable /tmp/google-chrome-bin/google-chrome
+  - export PATH=/tmp/google-chrome-bin:$PATH
+  - curl -s https://chromedriver.storage.googleapis.com/2.38/chromedriver_linux64.zip > /tmp/chromedriver_linux64.zip
+  - unzip -d /tmp/chromedriver_linux64 /tmp/chromedriver_linux64.zip
+  - export PATH=/tmp/chromedriver_linux64:$PATH
+
+before_script:
+  - export DISPLAY=:99.0
+  - sh -e /etc/init.d/xvfb start
+  - sleep 3
+
+script:
+  - test -z $(gofmt -s -l $GOPATH/src/github.com/hajimehoshi/ebiten)
+  - go build -tags example -v github.com/hajimehoshi/ebiten/examples/...
+  - go test -v github.com/hajimehoshi/ebiten/...
+  - gopherjs build --tags example -v github.com/hajimehoshi/ebiten/examples/blocks
+  - gjbt github.com/hajimehoshi/ebiten # TODO: Test the subdirectories
+
+notifications:
+  email:
+    recipients:
+      - hajimehoshi@gmail.com
